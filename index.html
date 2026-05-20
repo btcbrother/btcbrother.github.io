@@ -3,1565 +3,322 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>极简加密钱包</title>
-    <!-- Tailwind CSS v3 -->
+    <title>极简加密钱包（直连节点）</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome -->
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
-    <!-- 统一的 Tailwind 配置 -->
+    <!-- Web3.js（直接连节点用） -->
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.6.0/dist/web3.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        primary: '#0F172A',      // 深蓝色背景
-                        secondary: '#1E293B',    // 次级深色背景
-                        accent: '#F59E0B',       // 亮黄色强调色
-                        'accent-light': '#FBBF24', // 浅一点的黄色
-                        'accent-dark': '#D97706',  // 深一点的黄色
-                        'blue-primary': '#3B82F6', // 蓝色主色调
-                        'blue-light': '#60A5FA',   // 浅蓝色
-                        'blue-dark': '#2563EB',    // 深蓝色
-                        'text-primary': '#FFFFFF', // 主文本颜色
-                        'text-secondary': '#94A3B8', // 次级文本颜色
+                        primary: '#0F172A',
+                        secondary: '#1E293B',
+                        accent: '#F59E0B',
+                        'accent-light': '#FBBF24',
+                        'accent-dark': '#D97706',
+                        'blue-primary': '#3B82F6',
+                        'blue-light': '#60A5FA',
+                        'blue-dark': '#2563EB',
+                        'text-primary': '#FFFFFF',
+                        'text-secondary': '#94A3B8',
                     },
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                    },
-                    animation: {
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                    }
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
                 }
             }
         }
     </script>
     <style type="text/tailwindcss">
         @layer utilities {
-            .content-auto {
-                content-visibility: auto;
-            }
-            .glass-effect {
-                @apply bg-opacity-20 backdrop-blur-md backdrop-filter;
-            }
-            .card-shadow {
-                @apply shadow-lg shadow-blue-900/20;
-            }
-            .btn-primary {
-                @apply bg-accent hover:bg-accent-dark text-primary font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50;
-            }
-            .btn-secondary {
-                @apply bg-blue-primary hover:bg-blue-dark text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-primary focus:ring-opacity-50;
-            }
-            .btn-outline {
-                @apply border border-accent text-accent hover:bg-accent hover:text-primary font-bold py-3 px-6 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50;
-            }
-            .input-primary {
-                @apply bg-secondary border border-gray-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent;
-            }
-            .tab-active {
-                @apply border-b-2 border-accent text-white;
-            }
-            .tab-inactive {
-                @apply text-text-secondary hover:text-white;
-            }
-            .nft-card {
-                @apply bg-secondary rounded-xl overflow-hidden card-shadow transition-all duration-300 transform hover:scale-105 hover:shadow-xl hover:shadow-blue-900/30;
-            }
-            .token-item {
-                @apply bg-secondary rounded-lg p-4 flex justify-between items-center card-shadow transition-all duration-300 hover:bg-opacity-80;
-            }
-            .wallet-card {
-                @apply bg-secondary rounded-lg p-4 card-shadow transition-all duration-300 hover:bg-opacity-80;
-            }
+            .content-auto { content-visibility: auto; }
+            .glass-effect { @apply bg-opacity-20 backdrop-blur-md backdrop-filter; }
+            .card-shadow { @apply shadow-lg shadow-blue-900/20; }
+            .btn-primary { @apply bg-accent hover:bg-accent-dark text-primary font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50; }
+            .btn-secondary { @apply bg-blue-primary hover:bg-blue-dark text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-primary focus:ring-opacity-50; }
+            .btn-outline { @apply border border-accent text-accent hover:bg-accent hover:text-primary font-bold py-3 px-6 rounded-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-opacity-50; }
+            .input-primary { @apply bg-secondary border border-gray-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent; }
+            .tab-active { @apply border-b-2 border-accent text-white; }
+            .tab-inactive { @apply text-text-secondary hover:text-white; }
+            .nft-card { @apply bg-secondary rounded-xl overflow-hidden card-shadow transition-all duration-300 transform hover:scale-105 hover:shadow-xl hover:shadow-blue-900/30; }
+            .token-item { @apply bg-secondary rounded-lg p-4 flex justify-between items-center card-shadow transition-all duration-300 hover:bg-opacity-80; }
+            .wallet-card { @apply bg-secondary rounded-lg p-4 card-shadow transition-all duration-300 hover:bg-opacity-80; }
         }
     </style>
 </head>
 <body class="bg-primary text-text-primary min-h-screen">
-    <!-- 顶部状态栏 -->
-    <header class="fixed top-0 left-0 right-0 z-50 bg-primary bg-opacity-90 backdrop-blur-md border-b border-gray-800">
-        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center">
-                <button id="network-selector" class="flex items-center space-x-1 text-sm bg-secondary px-3 py-1 rounded-full">
-                    <span id="current-network">以太坊主网</span>
-                    <i class="fa fa-chevron-down text-xs"></i>
+<header class="fixed top-0 left-0 right-0 z-50 bg-primary bg-opacity-90 backdrop-blur-md border-b border-gray-800">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center">
+            <span class="text-sm bg-blue-primary px-3 py-1 rounded-full">以太坊主网（直连节点）</span>
+        </div>
+        <div class="flex items-center space-x-2">
+            <div id="wallet-address" class="text-sm font-mono bg-secondary px-3 py-1 rounded-full truncate max-w-[180px]">未导入地址</div>
+            <button id="settings-btn" class="p-2 rounded-full hover:bg-secondary">
+                <i class="fa fa-cog"></i>
+            </button>
+        </div>
+    </div>
+</header>
+
+<main class="container mx-auto px-4 pt-16 pb-20">
+    <div id="page-content">
+        <!-- 资产页面 -->
+        <div id="assets-page" class="page active">
+            <div class="mt-4 mb-6">
+                <h2 class="text-lg font-medium text-text-secondary mb-1">总资产价值</h2>
+                <div class="flex items-end space-x-2">
+                    <h1 class="text-3xl font-bold" id="total-balance">$0.00</h1>
+                    <span class="text-green-500 text-sm flex items-center mb-1">
+                        <i class="fa fa-arrow-up mr-1"></i>0% 今日
+                    </span>
+                </div>
+            </div>
+
+            <div class="bg-secondary rounded-xl p-4 mb-6 card-shadow">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-medium">资产走势</h3>
+                    <div class="flex space-x-2">
+                        <button class="text-xs px-2 py-1 rounded bg-blue-primary bg-opacity-20 text-blue-light">7天</button>
+                    </div>
+                </div>
+                <div class="h-40"><canvas id="assets-chart"></canvas></div>
+            </div>
+
+            <div class="flex space-x-4 mb-6">
+                <button id="send-btn" class="btn-primary flex-1 flex justify-center items-center">
+                    <i class="fa fa-paper-plane mr-2"></i> 发送
+                </button>
+                <button id="receive-btn" class="btn-secondary flex-1 flex justify-center items-center">
+                    <i class="fa fa-qrcode mr-2"></i> 接收
                 </button>
             </div>
-            <div class="flex items-center space-x-2">
-                <div id="wallet-address" class="text-sm font-mono bg-secondary px-3 py-1 rounded-full truncate max-w-[150px]">
-                    0x7a2e...88D
+
+            <!-- 地址/私钥导入区（关键：不用MetaMask） -->
+            <div class="bg-secondary rounded-xl p-4 mb-6 card-shadow">
+                <h3 class="font-medium mb-2">导入地址/私钥（直连节点）</h3>
+                <input id="address-input" class="input-primary w-full mb-2" placeholder="输入钱包地址（仅查余额）">
+                <input id="privatekey-input" class="input-primary w-full mb-2" placeholder="输入私钥（可转账，仅本地内存）">
+                <div class="flex space-x-2">
+                    <button id="load-balance-btn" class="btn-secondary flex-1">加载余额</button>
+                    <button id="clear-wallet-btn" class="btn-outline flex-1">清空</button>
                 </div>
-                <button id="settings-btn" class="p-2 rounded-full hover:bg-secondary">
-                    <i class="fa fa-cog"></i>
-                </button>
+            </div>
+
+            <div class="mb-4">
+                <div class="flex border-b border-gray-800">
+                    <button id="nfts-tab" class="tab-active flex-1 py-3 text-center font-medium">NFTs</button>
+                    <button id="tokens-tab" class="tab-inactive flex-1 py-3 text-center font-medium">代币</button>
+                </div>
+            </div>
+
+            <div id="nfts-section" class="mb-6">
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div class="nft-card">
+                        <div class="relative aspect-square overflow-hidden">
+                            <img src="https://p11-doubao-search-sign.byteimg.com/labis/image/8dc0fe9186f3f6a166b8f025a73755f8~tplv-be4g95zd3a-image.jpeg" alt="NFT" class="w-full h-full object-cover">
+                        </div>
+                        <div class="p-3">
+                            <h4 class="font-medium text-sm truncate">数字艺术 #1</h4>
+                            <div class="flex justify-between items-center mt-1">
+                                <span class="text-xs text-text-secondary">0.75 ETH</span>
+                                <span class="text-xs text-green-500">+5.2%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tokens-section" class="hidden">
+                <div class="space-y-3">
+                    <div class="token-item">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-full bg-blue-700 flex items-center justify-center">
+                                <i class="fa fa-ethereum text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-medium">以太坊 (ETH)</h4>
+                                <p class="text-xs text-text-secondary" id="real-eth-balance">0 ETH</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-medium" id="real-eth-value">$0.00</p>
+                            <p class="text-xs text-green-500">+0.0%</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </header>
 
-    <!-- 主内容区域 -->
-    <main class="container mx-auto px-4 pt-16 pb-20">
-        <!-- 页面内容 - 默认显示资产页面 -->
-        <div id="page-content">
-            <!-- 资产页面 -->
-            <div id="assets-page" class="page active">
-                <!-- 资产总览 -->
-                <div class="mt-4 mb-6">
-                    <h2 class="text-lg font-medium text-text-secondary mb-1">总资产价值</h2>
-                    <div class="flex items-end space-x-2">
-                        <h1 class="text-3xl font-bold">$12,456.78</h1>
-                        <span class="text-green-500 text-sm flex items-center mb-1">
-                            <i class="fa fa-arrow-up mr-1"></i>2.4% 今日
-                        </span>
-                    </div>
-                </div>
-
-                <!-- 资产图表 -->
-                <div class="bg-secondary rounded-xl p-4 mb-6 card-shadow">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="font-medium">资产走势</h3>
-                        <div class="flex space-x-2">
-                            <button class="text-xs px-2 py-1 rounded bg-blue-primary bg-opacity-20 text-blue-light">7天</button>
-                            <button class="text-xs px-2 py-1 rounded text-text-secondary">30天</button>
-                            <button class="text-xs px-2 py-1 rounded text-text-secondary">1年</button>
-                        </div>
-                    </div>
-                    <div class="h-40">
-                        <canvas id="assets-chart"></canvas>
-                    </div>
-                </div>
-
-                <!-- 快速操作按钮 -->
-                <div class="flex space-x-4 mb-6">
-                    <button id="send-btn" class="btn-primary flex-1 flex justify-center items-center">
-                        <i class="fa fa-paper-plane mr-2"></i> 发送
-                    </button>
-                    <button id="receive-btn" class="btn-secondary flex-1 flex justify-center items-center">
-                        <i class="fa fa-qrcode mr-2"></i> 接收
-                    </button>
-                </div>
-
-                <!-- NFT 和 Token 标签页 -->
-                <div class="mb-4">
-                    <div class="flex border-b border-gray-800">
-                        <button id="nfts-tab" class="tab-active flex-1 py-3 text-center font-medium">NFTs</button>
-                        <button id="tokens-tab" class="tab-inactive flex-1 py-3 text-center font-medium">代币</button>
-                    </div>
-                </div>
-
-                <!-- NFT 展示区域 -->
-                <div id="nfts-section" class="mb-6">
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <!-- NFT 卡片 1 -->
-                        <div class="nft-card">
-                            <div class="relative aspect-square overflow-hidden">
-                                <img src="https://p11-doubao-search-sign.byteimg.com/labis/image/8dc0fe9186f3f6a166b8f025a73755f8~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1794843262&x-signature=ICDMBS8eMOpJxymoofZOWmisJSE%3D" 
-                                     alt="NFT 艺术品" class="w-full h-full object-cover">
-                            </div>
-                            <div class="p-3">
-                                <h4 class="font-medium text-sm truncate">数字艺术 #1</h4>
-                                <div class="flex justify-between items-center mt-1">
-                                    <span class="text-xs text-text-secondary">0.75 ETH</span>
-                                    <span class="text-xs text-green-500">+5.2%</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- NFT 卡片 2 -->
-                        <div class="nft-card">
-                            <div class="relative aspect-square overflow-hidden">
-                                <img src="https://p26-doubao-search-sign.byteimg.com/labis/25fc06b4c8edcfa9f6994c0985bd7594~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1794843262&x-signature=4O8q%2BmLToNO9Yb%2BhyNveDJ%2F3ZYc%3D" 
-                                     alt="NFT 艺术品" class="w-full h-full object-cover">
-                            </div>
-                            <div class="p-3">
-                                <h4 class="font-medium text-sm truncate">WannaPanda #1024</h4>
-                                <div class="flex justify-between items-center mt-1">
-                                    <span class="text-xs text-text-secondary">0.32 ETH</span>
-                                    <span class="text-xs text-green-500">+2.8%</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- NFT 卡片 3 -->
-                        <div class="nft-card">
-                            <div class="relative aspect-square overflow-hidden">
-                                <img src="https://p11-doubao-search-sign.byteimg.com/pgc-image/SQAsmxW8asG3Vs~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1794843262&x-signature=4ANgIdo8qDZRFDxfeeeU96P1k6A%3D" 
-                                     alt="NFT 艺术品" class="w-full h-full object-cover">
-                            </div>
-                            <div class="p-3">
-                                <h4 class="font-medium text-sm truncate">Hashmask #456</h4>
-                                <div class="flex justify-between items-center mt-1">
-                                    <span class="text-xs text-text-secondary">0.5 ETH</span>
-                                    <span class="text-xs text-red-500">-1.2%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Token 展示区域 -->
-                <div id="tokens-section" class="hidden">
-                    <div class="space-y-3">
-                        <!-- Token 项目 1 -->
-                        <div class="token-item">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 rounded-full bg-blue-900 flex items-center justify-center">
-                                    <img src="https://p3-doubao-search-sign.byteimg.com/labis/image/71a588820bc5ff32ece3a38b71f3e1dd~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1794843262&x-signature=rXGmt3u7rDlOOKgkCc15uqBxxs4%3D" 
-                                         alt="BTC" class="w-6 h-6 object-contain">
-                                </div>
-                                <div>
-                                    <h4 class="font-medium">比特币 (BTC)</h4>
-                                    <p class="text-xs text-text-secondary">0.086 BTC</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="font-medium">$4,200.00</p>
-                                <p class="text-xs text-green-500">+1.5%</p>
-                            </div>
-                        </div>
-                        
-                        <!-- Token 项目 2 -->
-                        <div class="token-item">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 rounded-full bg-blue-700 flex items-center justify-center">
-                                    <i class="fa fa-ethereum text-white text-xl"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-medium">以太坊 (ETH)</h4>
-                                    <p class="text-xs text-text-secondary">2.34 ETH</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="font-medium">$7,654.32</p>
-                                <p class="text-xs text-green-500">+2.7%</p>
-                            </div>
-                        </div>
-                        
-                        <!-- Token 项目 3 -->
-                        <div class="token-item">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 rounded-full bg-purple-700 flex items-center justify-center">
-                                    <i class="fa fa-sun-o text-white text-xl"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-medium">Solana (SOL)</h4>
-                                    <p class="text-xs text-text-secondary">124.5 SOL</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="font-medium">$602.46</p>
-                                <p class="text-xs text-red-500">-0.8%</p>
-                            </div>
-                        </div>
-                        
-                        <!-- Token 项目 4 -->
-                        <div class="token-item">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 rounded-full bg-green-700 flex items-center justify-center">
-                                    <i class="fa fa-leaf text-white text-xl"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-medium">Binance Coin (BNB)</h4>
-                                    <p class="text-xs text-text-secondary">15.2 BNB</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="font-medium">$428.56</p>
-                                <p class="text-xs text-green-500">+0.9%</p>
-                            </div>
-                        </div>
-                        
-                        <!-- Token 项目 5 -->
-                        <div class="token-item">
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 rounded-full bg-yellow-700 flex items-center justify-center">
-                                    <i class="fa fa-bolt text-white text-xl"></i>
-                                </div>
-                                <div>
-                                    <h4 class="font-medium">Tether (USDT)</h4>
-                                    <p class="text-xs text-text-secondary">500 USDT</p>
-                                </div>
-                            </div>
-                            <div class="text-right">
-                                <p class="font-medium">$500.00</p>
-                                <p class="text-xs text-text-secondary">0.0%</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <!-- 转账页面 -->
+        <div id="transfer-page" class="page hidden">
+            <div class="mt-4 mb-6">
+                <h1 class="text-2xl font-bold">转账（直连节点）</h1>
             </div>
-
-            <!-- 转账页面 -->
-            <div id="transfer-page" class="page hidden">
-                <div class="mt-4 mb-6">
-                    <h1 class="text-2xl font-bold">转账</h1>
-                </div>
-
-                <!-- 代币选择 -->
-                <div class="mb-6">
-                    <label class="block text-text-secondary text-sm mb-2">选择代币</label>
-                    <div class="relative">
-                        <select id="token-select" class="input-primary w-full appearance-none pr-10">
-                            <option value="eth">以太坊 (ETH)</option>
-                            <option value="btc">比特币 (BTC)</option>
-                            <option value="sol">Solana (SOL)</option>
-                            <option value="bnb">Binance Coin (BNB)</option>
-                            <option value="usdt">Tether (USDT)</option>
-                        </select>
-                        <div class="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
-                            <i class="fa fa-chevron-down text-text-secondary"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 接收地址 -->
-                <div class="mb-6">
-                    <label for="recipient-address" class="block text-text-secondary text-sm mb-2">接收地址</label>
-                    <div class="relative">
-                        <input type="text" id="recipient-address" class="input-primary w-full" placeholder="请输入钱包地址">
-                        <button id="paste-address" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-light">
-                            <i class="fa fa-paste"></i>
-                        </button>
-                    </div>
-                    <div class="mt-2 text-xs text-text-secondary">
-                        <i class="fa fa-info-circle mr-1"></i> 请仔细核对地址，转账后无法撤回
-                    </div>
-                </div>
-
-                <!-- 转账金额 -->
-                <div class="mb-6">
-                    <label for="amount" class="block text-text-secondary text-sm mb-2">转账金额</label>
-                    <div class="relative">
-                        <input type="number" id="amount" class="input-primary w-full" placeholder="0.0">
-                        <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-text-secondary">
-                            <span id="token-symbol">ETH</span>
-                        </div>
-                    </div>
-                    <div class="mt-2 text-xs text-text-secondary">
-                        可用余额: <span id="available-balance">2.34 ETH</span>
-                    </div>
-                </div>
-
-                <!-- 快速金额选择 -->
-                <div class="mb-6">
-                    <div class="flex space-x-2">
-                        <button class="amount-btn flex-1 py-2 rounded-lg bg-secondary hover:bg-opacity-80 text-center text-sm" data-percent="25">25%</button>
-                        <button class="amount-btn flex-1 py-2 rounded-lg bg-secondary hover:bg-opacity-80 text-center text-sm" data-percent="50">50%</button>
-                        <button class="amount-btn flex-1 py-2 rounded-lg bg-secondary hover:bg-opacity-80 text-center text-sm" data-percent="75">75%</button>
-                        <button class="amount-btn flex-1 py-2 rounded-lg bg-secondary hover:bg-opacity-80 text-center text-sm" data-percent="100">100%</button>
-                    </div>
-                </div>
-
-                <!-- Gas 费用 -->
-                <div class="mb-6">
-                    <label class="block text-text-secondary text-sm mb-2">Gas 费用</label>
-                    <div class="flex space-x-2">
-                        <button class="gas-btn flex-1 py-2 rounded-lg bg-blue-primary text-center text-sm" data-gas="slow">慢速</button>
-                        <button class="gas-btn flex-1 py-2 rounded-lg bg-accent text-center text-sm active" data-gas="normal">标准</button>
-                        <button class="gas-btn flex-1 py-2 rounded-lg bg-secondary hover:bg-opacity-80 text-center text-sm" data-gas="fast">快速</button>
-                    </div>
-                    <div class="mt-2 text-xs text-text-secondary flex justify-between">
-                        <span>Gas 费用: <span id="gas-fee">0.005 ETH</span></span>
-                        <span>预计到账时间: <span id="estimated-time">2-5 分钟</span></span>
-                    </div>
-                </div>
-
-                <!-- 备注 -->
-                <div class="mb-8">
-                    <label for="memo" class="block text-text-secondary text-sm mb-2">备注 (可选)</label>
-                    <input type="text" id="memo" class="input-primary w-full" placeholder="添加备注信息">
-                </div>
-
-                <!-- 确认转账按钮 -->
-                <button id="confirm-transfer" class="btn-primary w-full">
-                    确认转账
-                </button>
+            <div class="mb-6">
+                <label class="block text-text-secondary text-sm mb-2">选择代币</label>
+                <select id="token-select" class="input-primary w-full">
+                    <option value="eth">以太坊 (ETH)</option>
+                </select>
             </div>
-
-            <!-- 钱包管理页面 -->
-            <div id="wallet-page" class="page hidden">
-                <div class="mt-4 mb-6">
-                    <h1 class="text-2xl font-bold">钱包管理</h1>
-                </div>
-
-                <!-- 创建/导入钱包按钮 -->
-                <div class="flex space-x-4 mb-6">
-                    <button id="create-wallet" class="btn-primary flex-1 flex justify-center items-center">
-                        <i class="fa fa-plus-circle mr-2"></i> 创建钱包
-                    </button>
-                    <button id="import-wallet" class="btn-secondary flex-1 flex justify-center items-center">
-                        <i class="fa fa-download mr-2"></i> 导入钱包
-                    </button>
-                </div>
-
-                <!-- 我的钱包列表 -->
-                <div class="mb-8">
-                    <h2 class="text-lg font-medium text-text-secondary mb-3">我的钱包</h2>
-                    <div class="space-y-3">
-                        <!-- 钱包卡片 1 -->
-                        <div class="wallet-card">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <div class="flex items-center">
-                                        <div class="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center mr-2">
-                                            <i class="fa fa-ethereum text-white"></i>
-                                        </div>
-                                        <h3 class="font-medium">以太坊主钱包</h3>
-                                    </div>
-                                    <p class="text-xs text-text-secondary mt-1 font-mono">0x7a2e...88D</p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="font-medium">$3,278.00</p>
-                                    <button class="text-xs bg-accent text-white px-3 py-1 rounded-full mt-1">详情</button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 钱包卡片 2 -->
-                        <div class="wallet-card">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <div class="flex items-center">
-                                        <div class="w-8 h-8 rounded-full bg-yellow-700 flex items-center justify-center mr-2">
-                                            <i class="fa fa-btc text-white"></i>
-                                        </div>
-                                        <h3 class="font-medium">比特币钱包</h3>
-                                    </div>
-                                    <p class="text-xs text-text-secondary mt-1 font-mono">bc1qx...wh</p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="font-medium">$4,200.00</p>
-                                    <button class="text-xs bg-accent text-white px-3 py-1 rounded-full mt-1">详情</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 观察钱包设置 -->
-                <div class="mb-6">
-                    <h2 class="text-lg font-medium text-text-secondary mb-3">观察钱包设置</h2>
-                    <div class="bg-secondary rounded-lg p-4 card-shadow">
-                        <!-- 添加观察地址 -->
-                        <div class="flex space-x-2 mb-4">
-                            <input type="text" id="watch-address" class="input-primary flex-1" placeholder="输入钱包地址">
-                            <button id="add-watch-wallet" class="btn-secondary whitespace-nowrap">添加观察钱包</button>
-                        </div>
-                        
-                        <!-- 已添加观察地址 -->
-                        <h3 class="text-sm text-text-secondary mb-2">已添加观察地址</h3>
-                        <div id="watch-wallets-list" class="space-y-2">
-                            <!-- 观察钱包项 1 -->
-                            <div class="flex justify-between items-center bg-primary bg-opacity-50 rounded-lg p-3">
-                                <div>
-                                    <div class="flex items-center">
-                                        <div class="w-6 h-6 rounded-full bg-blue-700 flex items-center justify-center mr-2">
-                                            <i class="fa fa-ethereum text-white text-xs"></i>
-                                        </div>
-                                        <span class="text-sm">ETH观察地址</span>
-                                    </div>
-                                    <p class="text-xs text-text-secondary mt-1 font-mono">0x1234...abcd</p>
-                                </div>
-                                <button class="delete-watch-btn text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-full">删除</button>
-                            </div>
-                            
-                            <!-- 观察钱包项 2 -->
-                            <div class="flex justify-between items-center bg-primary bg-opacity-50 rounded-lg p-3">
-                                <div>
-                                    <div class="flex items-center">
-                                        <div class="w-6 h-6 rounded-full bg-yellow-700 flex items-center justify-center mr-2">
-                                            <i class="fa fa-btc text-white text-xs"></i>
-                                        </div>
-                                        <span class="text-sm">BTC观察地址</span>
-                                    </div>
-                                    <p class="text-xs text-text-secondary mt-1 font-mono">bc1def...ghij</p>
-                                </div>
-                                <button class="delete-watch-btn text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-full">删除</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 观察钱包提醒设置 -->
-                <div class="mb-6">
-                    <h2 class="text-lg font-medium text-text-secondary mb-3">观察钱包提醒设置</h2>
-                    <div class="bg-secondary rounded-lg p-4 card-shadow">
-                        <!-- 大额交易提醒开关 -->
-                        <div class="flex justify-between items-center mb-4">
-                            <div>
-                                <h3 class="font-medium">大额交易提醒</h3>
-                                <p class="text-xs text-text-secondary mt-1">当观察钱包有大额交易时接收通知</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="alert-toggle" class="sr-only peer" checked>
-                                <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-                            </label>
-                        </div>
-                        
-                        <!-- 阈值设置 -->
-                        <div class="mb-4">
-                            <label for="alert-threshold" class="block text-text-secondary text-sm mb-2">提醒阈值 (USD)</label>
-                            <input type="number" id="alert-threshold" class="input-primary w-full" value="1000" min="100" step="100">
-                        </div>
-                        
-                        <!-- 提醒类型 -->
-                        <div>
-                            <label class="block text-text-secondary text-sm mb-2">提醒类型</label>
-                            <div class="space-y-2">
-                                <div class="flex items-center">
-                                    <input type="checkbox" id="incoming-alert" class="w-4 h-4 accent-accent mr-2" checked>
-                                    <label for="incoming-alert" class="text-sm">入账提醒</label>
-                                </div>
-                                <div class="flex items-center">
-                                    <input type="checkbox" id="outgoing-alert" class="w-4 h-4 accent-accent mr-2" checked>
-                                    <label for="outgoing-alert" class="text-sm">出账提醒</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="mb-6">
+                <label for="recipient-address" class="block text-text-secondary text-sm mb-2">接收地址</label>
+                <input type="text" id="recipient-address" class="input-primary w-full" placeholder="0x...">
             </div>
-
-            <!-- 设置页面 -->
-            <div id="settings-page" class="page hidden">
-                <div class="mt-4 mb-6">
-                    <h1 class="text-2xl font-bold">设置</h1>
-                </div>
-
-                <!-- 账户设置 -->
-                <div class="mb-6">
-                    <h2 class="text-lg font-medium text-text-secondary mb-3">账户设置</h2>
-                    <div class="space-y-3">
-                        <div class="bg-secondary rounded-lg p-4 flex justify-between items-center">
-                            <div>
-                                <h3 class="font-medium">个人资料</h3>
-                                <p class="text-xs text-text-secondary mt-1">修改头像、昵称等信息</p>
-                            </div>
-                            <i class="fa fa-chevron-right text-text-secondary"></i>
-                        </div>
-                        
-                        <div class="bg-secondary rounded-lg p-4 flex justify-between items-center">
-                            <div>
-                                <h3 class="font-medium">安全设置</h3>
-                                <p class="text-xs text-text-secondary mt-1">修改密码、设置指纹解锁等</p>
-                            </div>
-                            <i class="fa fa-chevron-right text-text-secondary"></i>
-                        </div>
-                        
-                        <div class="bg-secondary rounded-lg p-4 flex justify-between items-center">
-                            <div>
-                                <h3 class="font-medium">隐私设置</h3>
-                                <p class="text-xs text-text-secondary mt-1">管理数据和隐私选项</p>
-                            </div>
-                            <i class="fa fa-chevron-right text-text-secondary"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 网络设置 -->
-                <div class="mb-6">
-                    <h2 class="text-lg font-medium text-text-secondary mb-3">网络设置</h2>
-                    <div class="space-y-3">
-                        <div class="bg-secondary rounded-lg p-4 flex justify-between items-center">
-                            <div>
-                                <h3 class="font-medium">默认网络</h3>
-                                <p class="text-xs text-text-secondary mt-1">以太坊主网</p>
-                            </div>
-                            <i class="fa fa-chevron-right text-text-secondary"></i>
-                        </div>
-                        
-                        <div class="bg-secondary rounded-lg p-4 flex justify-between items-center">
-                            <div>
-                                <h3 class="font-medium">自定义RPC</h3>
-                                <p class="text-xs text-text-secondary mt-1">添加自定义网络</p>
-                            </div>
-                            <i class="fa fa-chevron-right text-text-secondary"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 通知设置 -->
-                <div class="mb-6">
-                    <h2 class="text-lg font-medium text-text-secondary mb-3">通知设置</h2>
-                    <div class="space-y-3">
-                        <div class="bg-secondary rounded-lg p-4 flex justify-between items-center">
-                            <div>
-                                <h3 class="font-medium">交易通知</h3>
-                                <p class="text-xs text-text-secondary mt-1">接收交易确认和状态更新</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" class="sr-only peer" checked>
-                                <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-                            </label>
-                        </div>
-                        
-                        <div class="bg-secondary rounded-lg p-4 flex justify-between items-center">
-                            <div>
-                                <h3 class="font-medium">价格提醒</h3>
-                                <p class="text-xs text-text-secondary mt-1">设置价格波动提醒</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" class="sr-only peer">
-                                <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 通用设置 -->
-                <div class="mb-6">
-                    <h2 class="text-lg font-medium text-text-secondary mb-3">通用设置</h2>
-                    <div class="space-y-3">
-                        <div class="bg-secondary rounded-lg p-4 flex justify-between items-center">
-                            <div>
-                                <h3 class="font-medium">深色模式</h3>
-                                <p class="text-xs text-text-secondary mt-1">切换应用主题</p>
-                            </div>
-                            <label class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" class="sr-only peer" checked>
-                                <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-                            </label>
-                        </div>
-                        
-                        <div class="bg-secondary rounded-lg p-4 flex justify-between items-center">
-                            <div>
-                                <h3 class="font-medium">语言</h3>
-                                <p class="text-xs text-text-secondary mt-1">简体中文</p>
-                            </div>
-                            <i class="fa fa-chevron-right text-text-secondary"></i>
-                        </div>
-                        
-                        <div class="bg-secondary rounded-lg p-4 flex justify-between items-center">
-                            <div>
-                                <h3 class="font-medium">清除缓存</h3>
-                                <p class="text-xs text-text-secondary mt-1">清除应用缓存数据</p>
-                            </div>
-                            <button class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-full">清除</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 关于 -->
-                <div class="mb-6">
-                    <h2 class="text-lg font-medium text-text-secondary mb-3">关于</h2>
-                    <div class="space-y-3">
-                        <div class="bg-secondary rounded-lg p-4 flex justify-between items-center">
-                            <div>
-                                <h3 class="font-medium">版本</h3>
-                                <p class="text-xs text-text-secondary mt-1">v1.0.0</p>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-secondary rounded-lg p-4 flex justify-between items-center">
-                            <div>
-                                <h3 class="font-medium">帮助中心</h3>
-                                <p class="text-xs text-text-secondary mt-1">查看使用指南和常见问题</p>
-                            </div>
-                            <i class="fa fa-chevron-right text-text-secondary"></i>
-                        </div>
-                        
-                        <div class="bg-secondary rounded-lg p-4 flex justify-between items-center">
-                            <div>
-                                <h3 class="font-medium">联系我们</h3>
-                                <p class="text-xs text-text-secondary mt-1">获取技术支持</p>
-                            </div>
-                            <i class="fa fa-chevron-right text-text-secondary"></i>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 退出登录 -->
-                <button id="logout-btn" class="btn-outline w-full mb-6">
-                    退出登录
-                </button>
+            <div class="mb-6">
+                <label for="amount" class="block text-text-secondary text-sm mb-2">转账金额</label>
+                <input type="number" id="amount" step="0.001" class="input-primary w-full" placeholder="0.0">
             </div>
+            <div class="mb-6 text-yellow-400 text-sm">
+                ⚠️ 私钥仅存在浏览器内存，刷新页面即清空；切勿在公共网络/电脑输入大额私钥
+            </div>
+            <button id="confirm-transfer" class="btn-primary w-full">发起转账</button>
         </div>
-    </main>
 
-<!-- 底部导航栏 -->
+        <div id="wallet-page" class="page hidden"><div class="mt-4 mb-6"><h1 class="text-2xl font-bold">钱包管理</h1></div></div>
+        <div id="settings-page" class="page hidden"><div class="mt-4 mb-6"><h1 class="text-2xl font-bold">设置</h1></div></div>
+    </div>
+</main>
+
 <nav class="fixed bottom-0 left-0 right-0 bg-secondary border-t border-gray-800 z-50">
     <div class="container mx-auto px-4">
         <div class="flex justify-around">
-            <button class="nav-btn active flex flex-col items-center py-3 px-5 w-1/4" data-page="assets-page">
-                <i class="fa fa-home text-xl mb-1"></i>
-                <span class="text-xs">资产</span>
-            </button>
-            <button class="nav-btn flex flex-col items-center py-3 px-5 w-1/4" data-page="transfer-page">
-                <i class="fa fa-paper-plane text-xl mb-1"></i>
-                <span class="text-xs">转账</span>
-            </button>
-            <button class="nav-btn flex flex-col items-center py-3 px-5 w-1/4" data-page="wallet-page">
-                <i class="fa fa-exchange text-xl mb-1"></i>
-                <span class="text-xs">钱包</span>
-            </button>
-            <button class="nav-btn flex flex-col items-center py-3 px-5 w-1/4" data-page="settings-page">
-                <i class="fa fa-cog text-xl mb-1"></i>
-                <span class="text-xs">设置</span>
-            </button>
+            <button class="nav-btn active flex flex-col items-center py-3 px-5 w-1/4" data-page="assets-page"><i class="fa fa-home text-xl mb-1"></i><span class="text-xs">资产</span></button>
+            <button class="nav-btn flex flex-col items-center py-3 px-5 w-1/4" data-page="transfer-page"><i class="fa fa-paper-plane text-xl mb-1"></i><span class="text-xs">转账</span></button>
+            <button class="nav-btn flex flex-col items-center py-3 px-5 w-1/4" data-page="wallet-page"><i class="fa fa-wallet text-xl mb-1"></i><span class="text-xs">钱包</span></button>
+            <button class="nav-btn flex flex-col items-center py-3 px-5 w-1/4" data-page="settings-page"><i class="fa fa-cog text-xl mb-1"></i><span class="text-xs">设置</span></button>
         </div>
     </div>
 </nav>
-    <!-- 模态框 - 创建钱包 -->
-    <div id="create-wallet-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden">
-        <div class="bg-secondary rounded-xl w-11/12 max-w-md p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold">创建新钱包</h2>
-                <button class="close-modal text-text-secondary hover:text-white">
-                    <i class="fa fa-times text-xl"></i>
-                </button>
-            </div>
-            
-            <div class="mb-6">
-                <p class="text-text-secondary mb-4">请设置钱包密码，用于保护您的资产安全</p>
-                
-                <div class="mb-4">
-                    <label for="wallet-password" class="block text-text-secondary text-sm mb-2">密码</label>
-                    <input type="password" id="wallet-password" class="input-primary w-full" placeholder="请输入密码">
-                </div>
-                
-                <div class="mb-4">
-                    <label for="confirm-password" class="block text-text-secondary text-sm mb-2">确认密码</label>
-                    <input type="password" id="confirm-password" class="input-primary w-full" placeholder="请再次输入密码">
-                </div>
-                
-                <div class="flex items-center mb-4">
-                    <input type="checkbox" id="terms-agree" class="w-4 h-4 accent-accent mr-2">
-                    <label for="terms-agree" class="text-sm text-text-secondary">我已阅读并同意<a href="#" class="text-blue-light">服务条款</a>和<a href="#" class="text-blue-light">隐私政策</a></label>
-                </div>
-            </div>
-            
-            <button id="create-wallet-submit" class="btn-primary w-full">
-                创建钱包
-            </button>
-        </div>
-    </div>
 
-    <!-- 模态框 - 导入钱包 -->
-    <div id="import-wallet-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden">
-        <div class="bg-secondary rounded-xl w-11/12 max-w-md p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold">导入钱包</h2>
-                <button class="close-modal text-text-secondary hover:text-white">
-                    <i class="fa fa-times text-xl"></i>
-                </button>
-            </div>
-            
-            <div class="mb-6">
-                <div class="mb-4">
-                    <label class="block text-text-secondary text-sm mb-2">导入方式</label>
-                    <div class="flex space-x-2">
-                        <button class="import-method-btn flex-1 py-2 rounded-lg bg-accent text-center text-sm active" data-method="mnemonic">助记词</button>
-                        <button class="import-method-btn flex-1 py-2 rounded-lg bg-secondary hover:bg-opacity-80 text-center text-sm" data-method="private-key">私钥</button>
-                        <button class="import-method-btn flex-1 py-2 rounded-lg bg-secondary hover:bg-opacity-80 text-center text-sm" data-method="keystore">Keystore</button>
-                    </div>
-                </div>
-                
-                <div id="mnemonic-input" class="mb-4">
-                    <label for="mnemonic-words" class="block text-text-secondary text-sm mb-2">助记词</label>
-                    <textarea id="mnemonic-words" class="input-primary w-full h-32 resize-none" placeholder="请输入12-24个助记词，用空格分隔"></textarea>
-                    <p class="text-xs text-text-secondary mt-2">请确保助记词顺序正确，并用空格分隔</p>
-                </div>
-                
-                <div id="private-key-input" class="mb-4 hidden">
-                    <label for="private-key-value" class="block text-text-secondary text-sm mb-2">私钥</label>
-                    <input type="text" id="private-key-value" class="input-primary w-full" placeholder="请输入私钥">
-                    <p class="text-xs text-text-secondary mt-2">请确保私钥正确无误</p>
-                </div>
-                
-                <div id="keystore-input" class="mb-4 hidden">
-                    <label for="keystore-file" class="block text-text-secondary text-sm mb-2">Keystore 文件</label>
-                    <input type="file" id="keystore-file" class="input-primary w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-primary file:text-white hover:file:bg-blue-dark">
-                    
-                    <label for="keystore-password" class="block text-text-secondary text-sm mb-2 mt-4">Keystore 密码</label>
-                    <input type="password" id="keystore-password" class="input-primary w-full" placeholder="请输入Keystore密码">
-                </div>
-                
-                <div class="mb-4">
-                    <label for="wallet-name" class="block text-text-secondary text-sm mb-2">钱包名称 (可选)</label>
-                    <input type="text" id="wallet-name" class="input-primary w-full" placeholder="给钱包起个名字">
-                </div>
-            </div>
-            
-            <button id="import-wallet-submit" class="btn-primary w-full">
-                导入钱包
-            </button>
-        </div>
-    </div>
+<script>
+// 1. 直连公共RPC节点（Cloudflare，免费无需KEY）
+const rpcUrl = "https://cloudflare-eth.com";
+const web3 = new Web3(rpcUrl);
 
-    <!-- 模态框 - 转账确认 -->
-    <div id="transfer-confirm-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden">
-        <div class="bg-secondary rounded-xl w-11/12 max-w-md p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold">确认转账</h2>
-                <button class="close-modal text-text-secondary hover:text-white">
-                    <i class="fa fa-times text-xl"></i>
-                </button>
-            </div>
-            
-            <div class="mb-6">
-                <div class="bg-primary bg-opacity-50 rounded-lg p-4 mb-4">
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="text-text-secondary">发送方</span>
-                        <span class="font-mono text-sm truncate">0x7a2e...88D</span>
-                    </div>
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="text-text-secondary">接收方</span>
-                        <span id="confirm-recipient" class="font-mono text-sm truncate">0x1234...5678</span>
-                    </div>
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="text-text-secondary">代币</span>
-                        <span id="confirm-token">以太坊 (ETH)</span>
-                    </div>
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="text-text-secondary">金额</span>
-                        <span id="confirm-amount" class="font-medium">0.5 ETH</span>
-                    </div>
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="text-text-secondary">Gas 费用</span>
-                        <span id="confirm-gas">0.005 ETH</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="text-text-secondary">总金额</span>
-                        <span id="confirm-total" class="font-medium">0.505 ETH</span>
-                    </div>
-                </div>
-                
-                <div class="flex items-center mb-4">
-                    <input type="password" id="confirm-password" class="input-primary w-full" placeholder="请输入钱包密码">
-                </div>
-                
-                <p class="text-xs text-red-500">
-                    <i class="fa fa-exclamation-triangle mr-1"></i> 转账后无法撤回，请仔细核对接收地址和金额
-                </p>
-            </div>
-            
-            <div class="flex space-x-4">
-                <button class="btn-outline flex-1 close-modal">
-                    取消
-                </button>
-                <button id="final-confirm" class="btn-primary flex-1">
-                    确认转账
-                </button>
-            </div>
-        </div>
-    </div>
+let currentAddress = null;
+let currentPrivateKey = null;
 
-    <!-- 模态框 - 转账成功 -->
-    <div id="transfer-success-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden">
-        <div class="bg-secondary rounded-xl w-11/12 max-w-md p-6">
-            <div class="text-center mb-6">
-                <div class="w-20 h-20 rounded-full bg-green-700 bg-opacity-30 flex items-center justify-center mx-auto mb-4">
-                    <i class="fa fa-check text-green-500 text-4xl"></i>
-                </div>
-                <h2 class="text-xl font-bold mb-2">转账成功</h2>
-                <p class="text-text-secondary">您的交易已提交至网络</p>
-            </div>
-            
-            <div class="bg-primary bg-opacity-50 rounded-lg p-4 mb-6">
-                <div class="flex justify-between items-center mb-3">
-                    <span class="text-text-secondary">交易哈希</span>
-                    <span class="font-mono text-xs truncate">0xabc123...def456</span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-text-secondary">状态</span>
-                    <span class="text-green-500 text-sm">确认中</span>
-                </div>
-            </div>
-            
-            <div class="flex space-x-4">
-                <button class="btn-outline flex-1 close-modal">
-                    返回
-                </button>
-                <button id="view-transaction" class="btn-primary flex-1">
-                    查看交易
-                </button>
-            </div>
-        </div>
-    </div>
+// DOM元素
+const walletAddressEl = document.getElementById('wallet-address');
+const totalBalanceEl = document.getElementById('total-balance');
+const realEthBalanceEl = document.getElementById('real-eth-balance');
+const realEthValueEl = document.getElementById('real-eth-value');
+const addressInput = document.getElementById('address-input');
+const privatekeyInput = document.getElementById('privatekey-input');
+const loadBalanceBtn = document.getElementById('load-balance-btn');
+const clearWalletBtn = document.getElementById('clear-wallet-btn');
+const confirmTransferBtn = document.getElementById('confirm-transfer');
 
-    <!-- 模态框 - 网络选择 -->
-    <div id="network-modal" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden">
-        <div class="bg-secondary rounded-xl w-11/12 max-w-md p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold">选择网络</h2>
-                <button class="close-modal text-text-secondary hover:text-white">
-                    <i class="fa fa-times text-xl"></i>
-                </button>
-            </div>
-            
-            <div class="mb-6">
-                <div class="space-y-2">
-                    <div class="network-item flex justify-between items-center p-3 rounded-lg bg-accent bg-opacity-20 border border-accent">
-                        <div>
-                            <h3 class="font-medium">以太坊主网</h3>
-                            <p class="text-xs text-text-secondary">Ethereum Mainnet</p>
-                        </div>
-                        <i class="fa fa-check text-accent"></i>
-                    </div>
-                    
-                    <div class="network-item flex justify-between items-center p-3 rounded-lg hover:bg-primary hover:bg-opacity-50">
-                        <div>
-                            <h3 class="font-medium">比特币主网</h3>
-                            <p class="text-xs text-text-secondary">Bitcoin Mainnet</p>
-                        </div>
-                    </div>
-                    
-                    <div class="network-item flex justify-between items-center p-3 rounded-lg hover:bg-primary hover:bg-opacity-50">
-                        <div>
-                            <h3 class="font-medium">Binance Smart Chain</h3>
-                            <p class="text-xs text-text-secondary">BSC Mainnet</p>
-                        </div>
-                    </div>
-                    
-                    <div class="network-item flex justify-between items-center p-3 rounded-lg hover:bg-primary hover:bg-opacity-50">
-                        <div>
-                            <h3 class="font-medium">Solana</h3>
-                            <p class="text-xs text-text-secondary">Solana Mainnet</p>
-                        </div>
-                    </div>
-                    
-                    <div class="network-item flex justify-between items-center p-3 rounded-lg hover:bg-primary hover:bg-opacity-50">
-                        <div>
-                            <h3 class="font-medium">Polygon</h3>
-                            <p class="text-xs text-text-secondary">Polygon Mainnet</p>
-                        </div>
-                    </div>
-                    
-                    <div class="network-item flex justify-between items-center p-3 rounded-lg hover:bg-primary hover:bg-opacity-50">
-                        <div>
-                            <h3 class="font-medium">Avalanche</h3>
-                            <p class="text-xs text-text-secondary">Avalanche C-Chain</p>
-                        </div>
-                    </div>
-                    
-                    <div class="network-item flex justify-between items-center p-3 rounded-lg hover:bg-primary hover:bg-opacity-50">
-                        <div>
-                            <h3 class="font-medium">Arbitrum</h3>
-                            <p class="text-xs text-text-secondary">Arbitrum One</p>
-                        </div>
-                    </div>
-                    
-                    <div class="network-item flex justify-between items-center p-3 rounded-lg hover:bg-primary hover:bg-opacity-50">
-                        <div>
-                            <h3 class="font-medium">Optimism</h3>
-                            <p class="text-xs text-text-secondary">Optimism Mainnet</p>
-                        </div>
-                    </div>
-                    
-                    <div class="network-item flex justify-between items-center p-3 rounded-lg hover:bg-primary hover:bg-opacity-50">
-                        <div>
-                            <h3 class="font-medium">以太坊测试网</h3>
-                            <p class="text-xs text-text-secondary">Sepolia Testnet</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <button class="btn-secondary w-full close-modal">
-                取消
-            </button>
-        </div>
-    </div>
+// 页面切换
+document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+        document.getElementById(btn.dataset.page).classList.remove('hidden');
+    });
+});
 
-    <!-- JavaScript -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // 页面切换
-            const navButtons = document.querySelectorAll('.nav-btn');
-            const pages = document.querySelectorAll('.page');
-            
-            navButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const targetPage = this.getAttribute('data-page');
-                    
-                    // 更新导航按钮状态
-                    navButtons.forEach(btn => btn.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    // 更新页面显示
-                    pages.forEach(page => page.classList.add('hidden'));
-                    document.getElementById(targetPage).classList.remove('hidden');
-                });
-            });
-            
-            // NFT 和 Token 标签页切换
-            const nftsTab = document.getElementById('nfts-tab');
-            const tokensTab = document.getElementById('tokens-tab');
-            const nftsSection = document.getElementById('nfts-section');
-            const tokensSection = document.getElementById('tokens-section');
-            
-            nftsTab.addEventListener('click', function() {
-                nftsTab.classList.add('tab-active');
-                nftsTab.classList.remove('tab-inactive');
-                tokensTab.classList.add('tab-inactive');
-                tokensTab.classList.remove('tab-active');
-                
-                nftsSection.classList.remove('hidden');
-                tokensSection.classList.add('hidden');
-            });
-            
-            tokensTab.addEventListener('click', function() {
-                tokensTab.classList.add('tab-active');
-                tokensTab.classList.remove('tab-inactive');
-                nftsTab.classList.add('tab-inactive');
-                nftsTab.classList.remove('tab-active');
-                
-                tokensSection.classList.remove('hidden');
-                nftsSection.classList.add('hidden');
-            });
-            
-            // 转账页面 - 代币选择
-            const tokenSelect = document.getElementById('token-select');
-            const tokenSymbol = document.getElementById('token-symbol');
-            const availableBalance = document.getElementById('available-balance');
-            
-            tokenSelect.addEventListener('change', function() {
-                const selectedToken = this.value;
-                let symbol, balance;
-                
-                switch(selectedToken) {
-                    case 'eth':
-                        symbol = 'ETH';
-                        balance = '2.34 ETH';
-                        break;
-                    case 'btc':
-                        symbol = 'BTC';
-                        balance = '0.086 BTC';
-                        break;
-                    case 'sol':
-                        symbol = 'SOL';
-                        balance = '124.5 SOL';
-                        break;
-                    case 'bnb':
-                        symbol = 'BNB';
-                        balance = '15.2 BNB';
-                        break;
-                    case 'usdt':
-                        symbol = 'USDT';
-                        balance = '500 USDT';
-                        break;
-                    default:
-                        symbol = 'ETH';
-                        balance = '2.34 ETH';
-                }
-                
-                tokenSymbol.textContent = symbol;
-                availableBalance.textContent = balance;
-            });
-            
-            // 转账页面 - 快速金额选择
-            const amountBtns = document.querySelectorAll('.amount-btn');
-            const amountInput = document.getElementById('amount');
-            
-            amountBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const percent = parseInt(this.getAttribute('data-percent'));
-                    const selectedToken = tokenSelect.value;
-                    let balance, amount;
-                    
-                    switch(selectedToken) {
-                        case 'eth':
-                            balance = 2.34;
-                            break;
-                        case 'btc':
-                            balance = 0.086;
-                            break;
-                        case 'sol':
-                            balance = 124.5;
-                            break;
-                        case 'bnb':
-                            balance = 15.2;
-                            break;
-                        case 'usdt':
-                            balance = 500;
-                            break;
-                        default:
-                            balance = 2.34;
-                    }
-                    
-                    amount = (balance * percent / 100).toFixed(6);
-                    amountInput.value = amount;
-                });
-            });
-            
-            // 转账页面 - Gas 费用选择
-            const gasBtns = document.querySelectorAll('.gas-btn');
-            const gasFee = document.getElementById('gas-fee');
-            const estimatedTime = document.getElementById('estimated-time');
-            
-            gasBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    gasBtns.forEach(b => b.classList.remove('active', 'bg-accent'));
-                    gasBtns.forEach(b => b.classList.add('bg-secondary', 'hover:bg-opacity-80'));
-                    
-                    this.classList.add('active', 'bg-accent');
-                    this.classList.remove('bg-secondary', 'hover:bg-opacity-80');
-                    
-                    const gasType = this.getAttribute('data-gas');
-                    let fee, time;
-                    
-                    switch(gasType) {
-                        case 'slow':
-                            fee = '0.003 ETH';
-                            time = '10-30 分钟';
-                            break;
-                        case 'normal':
-                            fee = '0.005 ETH';
-                            time = '2-5 分钟';
-                            break;
-                        case 'fast':
-                            fee = '0.008 ETH';
-                            time = '30 秒 - 2 分钟';
-                            break;
-                        default:
-                            fee = '0.005 ETH';
-                            time = '2-5 分钟';
-                    }
-                    
-                    gasFee.textContent = fee;
-                    estimatedTime.textContent = time;
-                });
-            });
-            
-            // 钱包管理页面 - 添加观察钱包
-            const addWatchWalletBtn = document.getElementById('add-watch-wallet');
-            const watchAddressInput = document.getElementById('watch-address');
-            const watchWalletsList = document.getElementById('watch-wallets-list');
-            
-            addWatchWalletBtn.addEventListener('click', function() {
-                const address = watchAddressInput.value.trim();
-                
-                if (address) {
-                    // 简单验证地址格式
-                    let isValid = false;
-                    let addressType = '';
-                    
-                    if (address.startsWith('0x') && address.length === 42) {
-                        isValid = true;
-                        addressType = 'ETH';
-                    } else if (address.startsWith('bc1') || address.startsWith('1') || address.startsWith('3')) {
-                        isValid = true;
-                        addressType = 'BTC';
-                    }
-                    
-                    if (isValid) {
-                        // 创建新的观察钱包项
-                        const shortAddress = address.substring(0, 6) + '...' + address.substring(address.length - 4);
-                        
-                        const walletItem = document.createElement('div');
-                        walletItem.className = 'flex justify-between items-center bg-primary bg-opacity-50 rounded-lg p-3';
-                        walletItem.innerHTML = `
-                            <div>
-                                <div class="flex items-center">
-                                    <div class="w-6 h-6 rounded-full ${addressType === 'ETH' ? 'bg-blue-700' : 'bg-yellow-700'} flex items-center justify-center mr-2">
-                                        <i class="fa fa-${addressType === 'ETH' ? 'ethereum' : 'btc'} text-white text-xs"></i>
-                                    </div>
-                                    <span class="text-sm">${addressType}观察地址</span>
-                                </div>
-                                <p class="text-xs text-text-secondary mt-1 font-mono">${shortAddress}</p>
-                            </div>
-                            <button class="delete-watch-btn text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-full">删除</button>
-                        `;
-                        
-                        // 添加到列表
-                        watchWalletsList.appendChild(walletItem);
-                        
-                        // 清空输入框
-                        watchAddressInput.value = '';
-                        
-                        // 添加删除按钮事件
-                        const deleteBtn = walletItem.querySelector('.delete-watch-btn');
-                        deleteBtn.addEventListener('click', function() {
-                            walletItem.remove();
-                        });
-                        
-                        // 显示成功提示
-                        showToast('观察钱包添加成功');
-                    } else {
-                        showToast('无效的钱包地址格式', 'error');
-                    }
-                } else {
-                    showToast('请输入钱包地址', 'error');
-                }
-            });
-            
-            // 钱包管理页面 - 删除观察钱包
-            const deleteWatchBtns = document.querySelectorAll('.delete-watch-btn');
-            
-            deleteWatchBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    this.closest('.flex.justify-between.items-center.bg-primary.bg-opacity-50.rounded-lg.p-3').remove();
-                });
-            });
-            
-            // 创建钱包模态框
-            const createWalletBtn = document.getElementById('create-wallet');
-            const createWalletModal = document.getElementById('create-wallet-modal');
-            const createWalletSubmit = document.getElementById('create-wallet-submit');
-            const walletPassword = document.getElementById('wallet-password');
-            const confirmPassword = document.getElementById('confirm-password');
-            const termsAgree = document.getElementById('terms-agree');
-            
-            createWalletBtn.addEventListener('click', function() {
-                createWalletModal.classList.remove('hidden');
-            });
-            
-            createWalletSubmit.addEventListener('click', function() {
-                const password = walletPassword.value;
-                const confirmPass = confirmPassword.value;
-                
-                if (!password) {
-                    showToast('请输入密码', 'error');
-                    return;
-                }
-                
-                if (password !== confirmPass) {
-                    showToast('两次输入的密码不一致', 'error');
-                    return;
-                }
-                
-                if (!termsAgree.checked) {
-                    showToast('请阅读并同意服务条款和隐私政策', 'error');
-                    return;
-                }
-                
-                // 模拟创建钱包过程
-                createWalletModal.classList.add('hidden');
-                showToast('钱包创建成功');
-                
-                // 重置表单
-                walletPassword.value = '';
-                confirmPassword.value = '';
-                termsAgree.checked = false;
-            });
-            
-            // 导入钱包模态框
-            const importWalletBtn = document.getElementById('import-wallet');
-            const importWalletModal = document.getElementById('import-wallet-modal');
-            const importWalletSubmit = document.getElementById('import-wallet-submit');
-            const importMethodBtns = document.querySelectorAll('.import-method-btn');
-            const mnemonicInput = document.getElementById('mnemonic-input');
-            const privateKeyInput = document.getElementById('private-key-input');
-            const keystoreInput = document.getElementById('keystore-input');
-            
-            importWalletBtn.addEventListener('click', function() {
-                importWalletModal.classList.remove('hidden');
-            });
-            
-            importMethodBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    importMethodBtns.forEach(b => b.classList.remove('active', 'bg-accent'));
-                    importMethodBtns.forEach(b => b.classList.add('bg-secondary', 'hover:bg-opacity-80'));
-                    
-                    this.classList.add('active', 'bg-accent');
-                    this.classList.remove('bg-secondary', 'hover:bg-opacity-80');
-                    
-                    const method = this.getAttribute('data-method');
-                    
-                    mnemonicInput.classList.add('hidden');
-                    privateKeyInput.classList.add('hidden');
-                    keystoreInput.classList.add('hidden');
-                    
-                    if (method === 'mnemonic') {
-                        mnemonicInput.classList.remove('hidden');
-                    } else if (method === 'private-key') {
-                        privateKeyInput.classList.remove('hidden');
-                    } else if (method === 'keystore') {
-                        keystoreInput.classList.remove('hidden');
-                    }
-                });
-            });
-            
-            importWalletSubmit.addEventListener('click', function() {
-                const activeMethod = document.querySelector('.import-method-btn.active').getAttribute('data-method');
-                let isValid = false;
-                let message = '';
-                
-                if (activeMethod === 'mnemonic') {
-                    const words = document.getElementById('mnemonic-words').value.trim().split(/\s+/);
-                    if (words.length < 12) {
-                        message = '助记词至少需要12个单词';
-                    } else {
-                        isValid = true;
-                    }
-                } else if (activeMethod === 'private-key') {
-                    const key = document.getElementById('private-key-value').value.trim();
-                    if (!key) {
-                        message = '请输入私钥';
-                    } else {
-                        isValid = true;
-                    }
-                } else if (activeMethod === 'keystore') {
-                    const file = document.getElementById('keystore-file').files[0];
-                    const password = document.getElementById('keystore-password').value;
-                    
-                    if (!file) {
-                        message = '请选择Keystore文件';
-                    } else if (!password) {
-                        message = '请输入Keystore密码';
-                    } else {
-                        isValid = true;
-                    }
-                }
-                
-                if (isValid) {
-                    importWalletModal.classList.add('hidden');
-                    showToast('钱包导入成功');
-                    
-                    // 重置表单
-                    document.getElementById('mnemonic-words').value = '';
-                    document.getElementById('private-key-value').value = '';
-                    document.getElementById('keystore-file').value = '';
-                    document.getElementById('keystore-password').value = '';
-                    document.getElementById('wallet-name').value = '';
-                } else {
-                    showToast(message, 'error');
-                }
-            });
-            
-            // 转账确认模态框
-            const confirmTransferBtn = document.getElementById('confirm-transfer');
-            const transferConfirmModal = document.getElementById('transfer-confirm-modal');
-            const finalConfirmBtn = document.getElementById('final-confirm');
-            const transferSuccessModal = document.getElementById('transfer-success-modal');
-            
-            confirmTransferBtn.addEventListener('click', function() {
-                const recipient = document.getElementById('recipient-address').value.trim();
-                const amount = document.getElementById('amount').value;
-                const token = tokenSelect.options[tokenSelect.selectedIndex].text;
-                const gas = gasFee.textContent;
-                
-                if (!recipient) {
-                    showToast('请输入接收地址', 'error');
-                    return;
-                }
-                
-                if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
-                    showToast('请输入有效的转账金额', 'error');
-                    return;
-                }
-                
-                // 更新确认信息
-                document.getElementById('confirm-recipient').textContent = recipient.substring(0, 6) + '...' + recipient.substring(recipient.length - 4);
-                document.getElementById('confirm-token').textContent = token;
-                document.getElementById('confirm-amount').textContent = amount + ' ' + tokenSymbol.textContent;
-                document.getElementById('confirm-gas').textContent = gas;
-                
-                const totalAmount = (parseFloat(amount) + parseFloat(gas)).toFixed(6);
-                document.getElementById('confirm-total').textContent = totalAmount + ' ' + tokenSymbol.textContent;
-                
-                transferConfirmModal.classList.remove('hidden');
-            });
-            
-            finalConfirmBtn.addEventListener('click', function() {
-                const password = document.getElementById('confirm-password').value;
-                
-                if (!password) {
-                    showToast('请输入钱包密码', 'error');
-                    return;
-                }
-                
-                // 模拟转账过程
-                transferConfirmModal.classList.add('hidden');
-                transferSuccessModal.classList.remove('hidden');
-                
-                // 重置表单
-                document.getElementById('confirm-password').value = '';
-            });
-            
-            // 查看交易按钮
-            document.getElementById('view-transaction').addEventListener('click', function() {
-                transferSuccessModal.classList.add('hidden');
-                showToast('正在跳转到区块链浏览器...');
-            });
-            
-            // 网络选择模态框
-            const networkSelector = document.getElementById('network-selector');
-            const networkModal = document.getElementById('network-modal');
-            const networkItems = document.querySelectorAll('.network-item');
-            const currentNetwork = document.getElementById('current-network');
-            
-            networkSelector.addEventListener('click', function() {
-                networkModal.classList.remove('hidden');
-            });
-            
-            networkItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    const networkName = this.querySelector('h3').textContent;
-                    currentNetwork.textContent = networkName;
-                    
-                    networkItems.forEach(i => {
-                        i.classList.remove('bg-accent', 'bg-opacity-20', 'border', 'border-accent');
-                        i.querySelector('i.fa-check')?.remove();
-                    });
-                    
-                    this.classList.add('bg-accent', 'bg-opacity-20', 'border', 'border-accent');
-                    
-                    if (!this.querySelector('i.fa-check')) {
-                        const checkIcon = document.createElement('i');
-                        checkIcon.className = 'fa fa-check text-accent';
-                        this.appendChild(checkIcon);
-                    }
-                    
-                    networkModal.classList.add('hidden');
-                    showToast(`已切换到 ${networkName}`);
-                });
-            });
-            
-            // 设置按钮
-            document.getElementById('settings-btn').addEventListener('click', function() {
-                // 更新导航按钮状态
-                navButtons.forEach(btn => btn.classList.remove('active'));
-                document.querySelector('[data-page="settings-page"]').classList.add('active');
-                
-                // 更新页面显示
-                pages.forEach(page => page.classList.add('hidden'));
-                document.getElementById('settings-page').classList.remove('hidden');
-            });
-            
-            // 发送和接收按钮
-            document.getElementById('send-btn').addEventListener('click', function() {
-                // 更新导航按钮状态
-                navButtons.forEach(btn => btn.classList.remove('active'));
-                document.querySelector('[data-page="transfer-page"]').classList.add('active');
-                
-                // 更新页面显示
-                pages.forEach(page => page.classList.add('hidden'));
-                document.getElementById('transfer-page').classList.remove('hidden');
-            });
-            
-            document.getElementById('receive-btn').addEventListener('click', function() {
-                showToast('接收地址已复制到剪贴板');
-            });
-            
-            // 退出登录按钮
-            document.getElementById('logout-btn').addEventListener('click', function() {
-                showToast('已安全退出登录');
-            });
-            
-            // 关闭模态框按钮
-            const closeModalBtns = document.querySelectorAll('.close-modal');
-            
-            closeModalBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    this.closest('.fixed').classList.add('hidden');
-                });
-            });
-            
-            // 粘贴地址按钮
-            document.getElementById('paste-address').addEventListener('click', function() {
-                // 模拟粘贴功能
-                document.getElementById('recipient-address').value = '0x1234567890123456789012345678901234567890';
-                showToast('地址已粘贴');
-            });
-            
-            // 初始化资产图表
-            const ctx = document.getElementById('assets-chart').getContext('2d');
-            const assetsChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
-                    datasets: [{
-                        label: '资产价值 (USD)',
-                        data: [11200, 11800, 11500, 12100, 12800, 12500, 12456],
-                        borderColor: '#3B82F6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 2,
-                        pointBackgroundColor: '#F59E0B',
-                        pointBorderColor: '#F59E0B',
-                        pointRadius: 4,
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            backgroundColor: 'rgba(15, 23, 42, 0.8)',
-                            titleColor: '#FFFFFF',
-                            bodyColor: '#94A3B8',
-                            borderColor: 'rgba(59, 130, 246, 0.3)',
-                            borderWidth: 1,
-                            padding: 10,
-                            displayColors: false,
-                            callbacks: {
-                                label: function(context) {
-                                    return `$${context.raw.toLocaleString()}`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: {
-                                display: false,
-                                drawBorder: false
-                            },
-                            ticks: {
-                                color: '#94A3B8',
-                                font: {
-                                    size: 10
-                                }
-                            }
-                        },
-                        y: {
-                            grid: {
-                                color: 'rgba(148, 163, 184, 0.1)',
-                                drawBorder: false
-                            },
-                            ticks: {
-                                color: '#94A3B8',
-                                font: {
-                                    size: 10
-                                },
-                                callback: function(value) {
-                                    return '$' + value.toLocaleString();
-                                }
-                            }
-                        }
-                    },
-                    interaction: {
-                        intersect: false,
-                        mode: 'index'
-                    }
-                }
-            });
-            
-            // 显示提示消息
-            function showToast(message, type = 'success') {
-                // 创建提示元素
-                const toast = document.createElement('div');
-                toast.className = `fixed top-20 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg z-50 transition-all duration-300 opacity-0 ${type === 'error' ? 'bg-red-600' : 'bg-green-600'} text-white`;
-                toast.textContent = message;
-                
-                // 添加到页面
-                document.body.appendChild(toast);
-                
-                // 显示提示
-                setTimeout(() => {
-                    toast.classList.remove('opacity-0');
-                    toast.classList.add('opacity-100');
-                }, 100);
-                
-                // 自动隐藏
-                setTimeout(() => {
-                    toast.classList.remove('opacity-100');
-                    toast.classList.add('opacity-0');
-                    
-                    // 移除元素
-                    setTimeout(() => {
-                        document.body.removeChild(toast);
-                    }, 300);
-                }, 3000);
-            }
-        });
-    </script>
+// Tab切换
+document.getElementById('nfts-tab').addEventListener('click', () => {
+    document.getElementById('nfts-tab').classList.add('tab-active');
+    document.getElementById('tokens-tab').classList.remove('tab-active');
+    document.getElementById('nfts-section').classList.remove('hidden');
+    document.getElementById('tokens-section').classList.add('hidden');
+});
+document.getElementById('tokens-tab').addEventListener('click', () => {
+    document.getElementById('tokens-tab').classList.add('tab-active');
+    document.getElementById('nfts-tab').classList.remove('tab-active');
+    document.getElementById('tokens-section').classList.remove('hidden');
+    document.getElementById('nfts-section').classList.add('hidden');
+});
+
+// 加载余额（核心：直连节点查余额）
+loadBalanceBtn.addEventListener('click', async () => {
+    const addr = addressInput.value.trim();
+    const pk = privatekeyInput.value.trim();
+    if (!addr) return alert('请输入钱包地址');
+    currentAddress = addr;
+    currentPrivateKey = pk || null;
+    walletAddressEl.innerText = addr.slice(0,6)+'...'+addr.slice(-4);
+    try {
+        const balanceWei = await web3.eth.getBalance(addr);
+        const balanceEth = parseFloat(web3.utils.fromWei(balanceWei, 'ether')).toFixed(4);
+        const usdValue = (balanceEth * 3200).toFixed(2);
+        realEthBalanceEl.innerText = balanceEth + ' ETH';
+        realEthValueEl.innerText = '$' + usdValue;
+        totalBalanceEl.innerText = '$' + usdValue;
+    } catch (e) {
+        alert('查询失败：' + e.message);
+    }
+});
+
+// 清空钱包
+clearWalletBtn.addEventListener('click', () => {
+    currentAddress = null;
+    currentPrivateKey = null;
+    addressInput.value = '';
+    privatekeyInput.value = '';
+    walletAddressEl.innerText = '未导入地址';
+    realEthBalanceEl.innerText = '0 ETH';
+    realEthValueEl.innerText = '$0.00';
+    totalBalanceEl.innerText = '$0.00';
+});
+
+// 直连节点转账（私钥签名，不经过MetaMask）
+confirmTransferBtn.addEventListener('click', async () => {
+    if (!currentAddress || !currentPrivateKey) return alert('请先导入地址和私钥');
+    const to = document.getElementById('recipient-address').value.trim();
+    const amount = document.getElementById('amount').value;
+    if (!to || !amount) return alert('请填写接收地址和金额');
+    try {
+        const nonce = await web3.eth.getTransactionCount(currentAddress);
+        const gasPrice = await web3.eth.getGasPrice();
+        const tx = {
+            from: currentAddress,
+            to: to,
+            value: web3.utils.toHex(web3.utils.toWei(amount, 'ether')),
+            gas: '0x5208',
+            gasPrice: gasPrice,
+            nonce: nonce
+        };
+        const signedTx = await web3.eth.accounts.signTransaction(tx, currentPrivateKey);
+        const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+        alert('转账成功！TxHash：' + receipt.transactionHash);
+    } catch (e) {
+        alert('转账失败：' + e.message);
+    }
+});
+
+// 初始化图表
+window.onload = () => {
+    const ctx = document.getElementById('assets-chart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['一', '二', '三', '四', '五', '六', '日'],
+            datasets: [{
+                data: [0,0,0,0,0,0,0],
+                borderColor: '#3B82F6',
+                tension: 0.4,
+                fill: true,
+                backgroundColor: 'rgba(59,130,246,0.1)'
+            }]
+        },
+        options: { plugins: { legend: false }, scales: { x: { grid: { display: false } }, y: { grid: { color: 'rgba(255,255,255,0.05)' } } } }
+    });
+};
+
+// 发送/接收按钮
+document.getElementById('send-btn').addEventListener('click', () => {
+    document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+    document.getElementById('transfer-page').classList.remove('hidden');
+});
+document.getElementById('receive-btn').addEventListener('click', () => {
+    if (!currentAddress) return alert('请先导入地址');
+    navigator.clipboard.writeText(currentAddress).then(() => alert('地址已复制'));
+});
+</script>
 </body>
+</html>
 </html>
